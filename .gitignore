@@ -1,0 +1,7 @@
+__pycache__
+venv
+errors_plot_*.pdf
+experiment*.pdf
+figure*.pdf
+fr2_errors_plot*.pdf
+fr2_error_plot.pdf
