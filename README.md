@@ -17,4 +17,4 @@ There is a single tabular MDP implemented in `GridworldMDP.py`. In principle the
 ## Results:
 There are several experiments in `main.py` currently only runs one FR-PPO vs Mirror Descent one.
 
-![Convergence plot](fr2_error_plot.pdf)
+[Convergence plot](fr2_error_plot.pdf)
