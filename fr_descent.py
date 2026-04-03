@@ -32,7 +32,9 @@ def policy_evaluation_stochastic(pi, V_old, mdp: GridworldMDP, tau, theta=1e-8):
     
     # Calculate the KL penalty / entropy term: tau * log(pi)
     # We compute this once outside the loop since the policy is fixed during evaluation
-    penalty = tau * np.log(pi + epsilon)
+    penalty = np.zeros_like(pi)
+    if tau > epsilon:
+        penalty = tau * np.log(pi + epsilon)
     
     while True:
         V_prev = np.copy(V)
@@ -68,7 +70,7 @@ def fr2_update(pi_old, old_V, mdp: GridworldMDP, tau, h):
     epsilon = 1e-25
     
     # 1. Evaluate the stochastic policy to get the regularized value function V
-    V = policy_evaluation_stochastic(pi_old, old_V, mdp, tau, theta=1e-8)
+    V = policy_evaluation_stochastic(pi_old, old_V, mdp, tau, theta=1e-16)
     
     # 2. Calculate advantage using the evaluated V
     A = get_advantage(V=V, mdp=mdp)
@@ -77,6 +79,8 @@ def fr2_update(pi_old, old_V, mdp: GridworldMDP, tau, h):
     # (Note: the +1 from the derivative of x*log(x) is a uniform shift 
     # and safely vanishes when we project onto the simplex)
     A_reg = A + tau * np.log(pi_old + epsilon)
+    if tau > epsilon:
+        A_reg = A + tau * np.log(pi_old + epsilon)
     
     # 4. Move in the direction of NEGATIVE regularized advantage (minimizing costs)
     pi_new = pi_old - h * A_reg
@@ -95,18 +99,16 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
     
     # Initialize to a valid uniform policy over actions
     pi_old = np.ones((num_states, num_actions)) / num_actions
+    diff = 0.0
     
     MAX_ITERATION_STEPS = np.floor(grad_time_T/h).astype(np.int32)
     for i in range(0, MAX_ITERATION_STEPS):
         if annealing:
             tau = max(tau_init / (1+i*h), tau_min)
 
-        print(f"Policy FR2 step {i+1} out of {MAX_ITERATION_STEPS} with h={h}, T={grad_time_T} ", end='')
-        
         pi, V = fr2_update(pi_old, V_old, mdp, tau=tau, h=h)
         
         diff = np.max(np.abs(V - V_old))
-        print(f"Max diff: {diff}")
         
         V_old = V
         pi_old = pi
@@ -114,6 +116,7 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
     # Update the value function one last time for the final policy we found 
     V = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-8)
 
+    # print(f"Policy FR2 steps {MAX_ITERATION_STEPS} with h={h}, T={grad_time_T}, Max diff: {diff}")
     return pi_old, V
 
 if __name__ == "__main__":
