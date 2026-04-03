@@ -15,5 +15,5 @@ There is a single tabular MDP implemented in `GridworldMDP.py`. In principle the
 - Run `main.py`. It's purpose is to provide plots showing impact of various chosen stepping schemes on how mirror descent performs.
 
 ## Results:
-There are several experiments in `main.py` but currently it just runs those presented in the paper [A Fisher-Rao gradient flow for entropy-regularised Markov decision processes in Polish spaces](https://arxiv.org/abs/2310.02951)
+There are several experiments in `main.py` currently only runs one FR-PPO one.
 
