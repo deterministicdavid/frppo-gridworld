@@ -90,31 +90,35 @@ def fr2_update(pi_old, old_V, mdp: GridworldMDP, tau, h):
     
     return pi_new, V
 
-def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_T: float = 10, annealing: bool=False, tau_min:float=0.0):
+def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_T: float = 10, annealing: bool=False, tau_min:float=0.0, print_value: bool = False):
     num_states = mdp.num_states
     num_actions = mdp.num_actions
     tau_init = tau
     
     V_old = np.zeros(num_states)
-    
+        
     # Initialize to a valid uniform policy over actions
     pi_old = np.ones((num_states, num_actions)) / num_actions
     diff = 0.0
     
     MAX_ITERATION_STEPS = np.floor(grad_time_T/h).astype(np.int32)
     for i in range(0, MAX_ITERATION_STEPS):
+        
         if annealing:
             tau = max(tau_init / (1+i*h), tau_min)
 
         pi, V = fr2_update(pi_old, V_old, mdp, tau=tau, h=h)
-        
-        diff = np.max(np.abs(V - V_old))
+        if print_value:
+            diff = np.max(np.abs(V - V_old))
+            print(f"fr2 step {i}, value={np.sum(V)}, improvement={diff}")
         
         V_old = V
         pi_old = pi
     
     # Update the value function one last time for the final policy we found 
     V = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-8)
+    # if print_value:
+    #     print(f"fr2 step {MAX_ITERATION_STEPS}, value={np.sum(V)}")
 
     # print(f"Policy FR2 steps {MAX_ITERATION_STEPS} with h={h}, T={grad_time_T}, Max diff: {diff}")
     return pi_old, V
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     _, optimal_value_soft_pol_iter = log_policy_iteration_softmax(mdp, tau=tau)
 
     # Run FR2 stepping
-    _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=0.1, grad_time_T=12)
+    _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=0.1, grad_time_T=12, print_value=True)
     
     # Diff
     V_diff = np.abs(V_fr2 - optimal_value_soft_pol_iter)

@@ -16,6 +16,7 @@ There is a single tabular MDP implemented in `GridworldMDP.py`. In principle the
 - Run `main.py`. It's purpose is to provide plots showing impact of various chosen stepping schemes on how mirror descent performs.
 
 ## Results:
-Run `main.py` to plot the figure linked below.
+Run `poetry run python fr_descent.py` to see monotonic improvement.
+Run `poetry run python main.py` to plot the figure linked below.
 
 [Convergence plot](fr2_error_plot.pdf)
