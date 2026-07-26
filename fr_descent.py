@@ -70,7 +70,7 @@ def fr2_update(pi_old, old_V, mdp: GridworldMDP, tau, h):
     epsilon = 1e-25
     
     # 1. Evaluate the stochastic policy to get the regularized value function V
-    V = policy_evaluation_stochastic(pi_old, old_V, mdp, tau, theta=1e-16)
+    V = policy_evaluation_stochastic(pi_old, old_V, mdp, tau, theta=1e-18)
     
     # 2. Calculate advantage using the evaluated V
     A = get_advantage(V=V, mdp=mdp)
@@ -109,17 +109,15 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
 
         pi, V = fr2_update(pi_old, V_old, mdp, tau=tau, h=h)
         if print_value:
-            diff = np.max(np.abs(V - V_old))
-            print(f"fr2 step {i}, value={np.sum(V)}, improvement={diff}")
+            diff = np.mean(V - V_old)
+            print(f"fr2 step {i}, value={np.mean(V):.6g}, improvement={diff:.2g}, improved={diff<0}")
         
         V_old = V
         pi_old = pi
     
     # Update the value function one last time for the final policy we found 
-    V = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-8)
-    # if print_value:
-    #     print(f"fr2 step {MAX_ITERATION_STEPS}, value={np.sum(V)}")
-
+    V = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-18)
+    
     # print(f"Policy FR2 steps {MAX_ITERATION_STEPS} with h={h}, T={grad_time_T}, Max diff: {diff}")
     return pi_old, V
 
@@ -141,7 +139,7 @@ if __name__ == "__main__":
     _, optimal_value_soft_pol_iter = log_policy_iteration_softmax(mdp, tau=tau)
 
     # Run FR2 stepping
-    _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=0.1, grad_time_T=12, print_value=True)
+    _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=0.05, grad_time_T=6, print_value=True)
     
     # Diff
     V_diff = np.abs(V_fr2 - optimal_value_soft_pol_iter)
