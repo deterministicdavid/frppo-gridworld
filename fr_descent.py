@@ -100,6 +100,9 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
     # Initialize to a valid uniform policy over actions
     pi_old = np.ones((num_states, num_actions)) / num_actions
     diff = 0.0
+
+    # List to collect (step, mean_V, improvement, improved_bool)
+    tracking_data = []
     
     MAX_ITERATION_STEPS = np.floor(grad_time_T/h).astype(np.int32)
     for i in range(0, MAX_ITERATION_STEPS):
@@ -108,18 +111,23 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
             tau = max(tau_init / (1+i*h), tau_min)
 
         pi, V = fr2_update(pi_old, V_old, mdp, tau=tau, h=h)
+
+        mean_v = np.mean(V)
+        diff = np.mean(V - V_old)
+        improved = diff < 0
+        tracking_data.append([i, mean_v, diff, float(improved)])
+        
         if print_value:
-            diff = np.mean(V - V_old)
-            print(f"fr2 step {i}, value={np.mean(V):.6g}, improvement={diff:.2g}, improved={diff<0}")
+            print(f"fr2 step {i}, value={mean_v:.6g}, improvement={diff:.2g}, improved={improved}")
         
         V_old = V
         pi_old = pi
     
     # Update the value function one last time for the final policy we found 
     V = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-18)
-    
-    # print(f"Policy FR2 steps {MAX_ITERATION_STEPS} with h={h}, T={grad_time_T}, Max diff: {diff}")
-    return pi_old, V
+
+    tracking_np = np.array(tracking_data, dtype=float)    
+    return pi_old, V, tracking_np
 
 if __name__ == "__main__":
     from PIA import policy_iteration
@@ -139,7 +147,24 @@ if __name__ == "__main__":
     _, optimal_value_soft_pol_iter = log_policy_iteration_softmax(mdp, tau=tau)
 
     # Run FR2 stepping
-    _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=0.05, grad_time_T=6, print_value=True)
+    _, V_fr2, tracking_data = policy_fr2_stepping(mdp, tau=tau, h=0.05, grad_time_T=6, print_value=True)
+
+    md_filename = "fr2_stepping_log.md"
+    with open(md_filename, "w") as md_file:
+        md_file.write("# FR2 Stepping Log\n\n")
+        md_file.write("| Step | Mean Value | Improvement | Improved |\n")
+        md_file.write("| :---: | :---: | :---: | :---: |\n")
+        
+        for row in tracking_data:
+            step = int(row[0])
+            val = row[1]
+            improvement = row[2]
+            # Convert the float back to boolean string for clean output
+            improved_str = "True" if row[3] == 1.0 else "False" 
+            
+            md_file.write(f"| {step} | {val:.6g} | {improvement:.2g} | {improved_str} |\n")
+            
+    print(f"\nMarkdown table successfully saved to {md_filename}\n")
     
     # Diff
     V_diff = np.abs(V_fr2 - optimal_value_soft_pol_iter)

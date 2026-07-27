@@ -26,7 +26,7 @@ def figure_fr2_convergence2():
     h_fr2 = 0.05
     h_md = 0.2
 
-    steps = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
+    steps = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 40, 48, 52, 56, 60, 64, 82, 96, 128]
     # steps = [2, 4, 6, 8]
     
     diffs_fr2 = []
@@ -34,7 +34,7 @@ def figure_fr2_convergence2():
     
     for num_steps in steps:
         # Run FR2 and MD stepping
-        _, V_fr2 = policy_fr2_stepping(mdp, tau=tau, h=h_fr2, grad_time_T=num_steps*h_fr2)
+        _, V_fr2, _ = policy_fr2_stepping(mdp, tau=tau, h=h_fr2, grad_time_T=num_steps*h_fr2)
         _, V_md = policy_mirror_stepping(mdp, tau=tau, h=h_md, grad_time_T=num_steps*h_md)
 
         V_diff_fr2 = np.max(np.abs(V_fr2 - optimal_value))
@@ -48,6 +48,21 @@ def figure_fr2_convergence2():
     steps_np = np.array(steps, dtype=float)
     diffs_fr2_np = np.array(diffs_fr2, dtype=float)
     diffs_md_np = np.array(diffs_md, dtype=float)
+
+    md_filename = "fr2_convergence_table.md"
+    with open(md_filename, "w") as md_file:
+        md_file.write("# FR2 Convergence Data\n\n")
+        md_file.write("| Steps (N) | fr2 penalty | Max Diff FR2 ($|V^* - V^N|$) |\n")
+        md_file.write("| :---: | :---: | :---: |\n")
+        
+        # Calculate the penalty as 1 / h
+        fr2_penalty = 1 / h_fr2
+        
+        for num_steps, diff in zip(steps, diffs_fr2):
+            # Using :g for penalty to format it nicely (e.g., 20 instead of 20.0)
+            md_file.write(f"| {num_steps} | {fr2_penalty:g} | {diff:.6f} |\n")
+            
+    print(f"\nMarkdown table successfully saved to {md_filename}\n")
     
     # Helper function to do the log-space fitting and L^2 error calculation
     def fit_convergence(steps_arr, diffs_arr):
