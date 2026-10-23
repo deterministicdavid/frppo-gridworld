@@ -99,6 +99,7 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
         
     # Initialize to a valid uniform policy over actions
     pi_old = np.ones((num_states, num_actions)) / num_actions
+    V_old  = policy_evaluation_stochastic(pi_old, V_old, mdp, tau, theta=1e-18)
     diff = 0.0
 
     # List to collect (step, mean_V, improvement, improved_bool)
@@ -114,7 +115,7 @@ def policy_fr2_stepping(mdp: GridworldMDP, tau: float, h:float = 1.0, grad_time_
 
         mean_v = np.mean(V)
         diff = np.mean(V - V_old)
-        improved = diff < 0
+        improved = diff <= 0
         tracking_data.append([i, mean_v, diff, float(improved)])
         
         if print_value:
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     _, optimal_value_soft_pol_iter = log_policy_iteration_softmax(mdp, tau=tau)
 
     # Run FR2 stepping
-    _, V_fr2, tracking_data = policy_fr2_stepping(mdp, tau=tau, h=0.05, grad_time_T=6, print_value=True)
+    _, V_fr2, tracking_data = policy_fr2_stepping(mdp, tau=tau, h=0.1, grad_time_T=2, print_value=True)
 
     md_filename = "fr2_stepping_log.md"
     with open(md_filename, "w") as md_file:
@@ -161,11 +162,40 @@ if __name__ == "__main__":
             improvement = row[2]
             # Convert the float back to boolean string for clean output
             improved_str = "True" if row[3] == 1.0 else "False" 
-            
-            md_file.write(f"| {step} | {val:.6g} | {improvement:.2g} | {improved_str} |\n")
+
+            # The algo minimizes but paper is about maximization. 
+            md_file.write(f"| {step} | {-val:.6g} | {-improvement:.2g} | {improved_str} |\n")
             
     print(f"\nMarkdown table successfully saved to {md_filename}\n")
-    
+
+    latex_filename = 'fr2_stepping_log.tex'
+    latex_rows = []
+    for row in tracking_data:
+        step = int(row[0])
+        val = row[1]
+        improvement = row[2]
+        improved_str = "True" if row[3] == 1.0 else "False"
+        latex_rows.append(f"{step:2d} & ${-val:9.6g}$ & ${-improvement:7.2g}$ & {improved_str} \\\\\n")
+
+    latex_content = r"""
+    \begin{table}[h]
+    \centering
+    \caption{FR2 Stepping Log}
+    \label{tab:fr2_stepping}
+    \begin{tabular}{cccc}
+    \toprule
+    \textbf{Step} & \textbf{Mean Value} & \textbf{Improvement} & \textbf{Improved} \\
+    \midrule
+    """ + "".join(latex_rows) + r"""
+    \bottomrule
+    \end{tabular}
+    \end{table}
+    """
+
+    with open(latex_filename, "w") as latex_file:
+        latex_file.write(latex_content)
+
+    print(f"LaTeX table successfully saved to {latex_filename}\n")
     # Diff
     V_diff = np.abs(V_fr2 - optimal_value_soft_pol_iter)
 

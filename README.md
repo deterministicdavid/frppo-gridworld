@@ -12,11 +12,11 @@ There is a single tabular MDP implemented in `GridworldMDP.py`. In principle the
 1. Mirror Descent (KL penalty) in `mirror_descent.py` for comparison.
 
 ## Running this:
-- To run the code, you will need to install [Python 3](https://www.python.org/downloads/), [NumPy](https://numpy.org/) and [Matplotlib](https://matplotlib.org/). If you're using Poetry, you can just run `poetry install`.
+- To run the code, you will need to install [Python 3](https://www.python.org/downloads/), [NumPy](https://numpy.org/) and [Matplotlib](https://matplotlib.org/). 
 - Run `main.py`. It's purpose is to provide plots showing impact of various chosen stepping schemes on how mirror descent performs.
 
 ## Results:
-Run `poetry run python fr_descent.py` to see monotonic improvement.
-Run `poetry run python main.py` to plot the figure linked below.
+Run `python fr_descent.py` to see monotonic improvement.
+Run `python main.py` to plot the figure linked below.
 
 [Convergence plot](fr2_error_plot.pdf)
